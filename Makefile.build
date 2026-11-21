@@ -1,0 +1,21 @@
+BUILD_DIR := build/$(PLATFORM)
+OBJ_DIR := $(BUILD_DIR)/objects
+OBJECTS := $(addprefix $(OBJ_DIR)/,$(notdir $(SRCS:.c=.o)))
+VPATH := source/common:source/$(PLATFORM)
+
+.PHONY: all clean test format
+all: $(BIN)
+
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BIN): $(OBJECTS)
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+clean:
+	rm -rf $(BUILD_DIR)
+
+format:
+	clang-format -i $(wildcard source/*/*.c headers/*.h headers/*/*.h sample/source/*.c)

@@ -1,0 +1,18 @@
+BUILD_DIR := build/$(PLATFORM)
+OBJ_DIR := $(BUILD_DIR)/objects
+OBJECT := $(OBJ_DIR)/payload.o
+VPATH := source
+
+.PHONY: all clean
+all: $(BIN)
+
+$(OBJECT): payload.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BIN): $(OBJECT)
+	@mkdir -p $(dir $@)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+clean:
+	rm -rf $(BUILD_DIR)

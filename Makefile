@@ -1,1 +1,3 @@
-Makefile.ps5
+PLATFORM ?= ps5
+
+include Makefile.$(PLATFORM)

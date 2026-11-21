@@ -1,4 +1,8 @@
 *~
+*.o
+*.a
+build/
+deps/
 *.elf
+*.bin
 .gdb_history
-

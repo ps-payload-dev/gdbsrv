@@ -1,46 +1,20 @@
-#   Copyright (C) 2024 John Törnblom
-#
-# This file is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING. If not see
-# <http://www.gnu.org/licenses/>.
-
+PLATFORM := ps5
 PS5_HOST ?= ps5
-
-ifdef PS5_PAYLOAD_SDK
-    include $(PS5_PAYLOAD_SDK)/toolchain/prospero.mk
-else
-    $(error PS5_PAYLOAD_SDK is undefined)
+ifndef PS5_PAYLOAD_SDK
+$(error PS5_PAYLOAD_SDK is undefined)
 endif
+include $(PS5_PAYLOAD_SDK)/toolchain/prospero.mk
 
-ELF  := payload-ps5.elf
-SRCS := payload.c
-
+BIN := build/ps5/payload-ps5.elf
 CFLAGS := -Wall -Werror -g
-LDADD := 
 
-all: $(ELF)
+include Makefile.build
 
-clean:
-	rm -rf $(ELF)
-
-$(ELF): $(SRCS)
-	$(CC) $(CFLAGS) -o $@ $^
-
-test: $(ELF)
+test: $(BIN)
 	gdb-multiarch \
 	-ex "set architecture i386:x86-64" \
 	-ex "target extended-remote $(PS5_HOST):2159" \
-	-ex "file $(ELF)" \
-	-ex "remote put $(ELF) /user/temp/$(ELF)" \
-	-ex "set remote exec-file /user/temp/$(ELF)" \
+	-ex "file $(BIN)" \
+	-ex "remote put $(BIN) /user/temp/$(notdir $(BIN))" \
+	-ex "set remote exec-file /user/temp/$(notdir $(BIN))" \
 	-ex "start"

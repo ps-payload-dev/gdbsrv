@@ -52,6 +52,7 @@ jobs:
           name: gdbsrv-ps4
           path: |
             build/ps4/gdbsrv-ps4.elf
+            build/ps4/gdbsrv-ps4.bin
           if-no-files-found: error
 
       - name: Upload PS5 build

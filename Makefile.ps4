@@ -15,5 +15,24 @@ CFLAGS := -Iheaders -Iheaders/ps4 -Wall -DVERSION_TAG=\"$(VERSION_TAG)\"
 
 include Makefile.build
 
+BOOT_ELF := $(BIN)
+
+# BIN bootstrapper: a flat x86-64 image that maps $(BOOT_ELF) into memory,
+# applies its relative relocations and jumps to its entry point
+BOOT_BIN := $(BOOT_ELF:.elf=.bin)
+BOOT_DIR := $(BUILD_DIR)/bootstrap
+
+all: $(BOOT_BIN)
+
+$(BOOT_DIR)/bin.o: source/ps4/bootstrap-bin.c $(BOOT_ELF)
+	@mkdir -p $(dir $@)
+	$(CC) -O2 -fPIC -fno-stack-protector -fno-builtin -Wall -Werror 	    -DBOOT_ELF=\"$(BOOT_ELF)\" -c -o $@ $<
+
+$(BOOT_DIR)/bin.elf: $(BOOT_DIR)/bin.o source/ps4/bin_x86_64.x
+	$(LD) -T source/ps4/bin_x86_64.x -o $@ $<
+
+$(BOOT_BIN): $(BOOT_DIR)/bin.elf
+	$(OBJCOPY) -O binary --only-section=.text $< $@
+
 test: $(BIN)
 	$(PS4_DEPLOY) -h $(PS4_HOST) -p $(PS4_PORT) $<

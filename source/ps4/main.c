@@ -15,6 +15,12 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <signal.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,9 +79,50 @@ find_pid(const char *name) {
   return pid;
 }
 
+static void
+describe_address(int port, char *out, size_t size) {
+  char ip[INET_ADDRSTRLEN] = "127.0.0.1";
+  char ifname[IFNAMSIZ] = "lo0";
+  struct ifaddrs *ifaddr;
+  int found = 0;
+
+  if(getifaddrs(&ifaddr) == 0) {
+    for(struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+      char addr[INET_ADDRSTRLEN];
+      int preferred;
+
+      if(ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET
+         || !strncmp("lo", ifa->ifa_name, 2)) {
+        continue;
+      }
+
+      inet_ntop(AF_INET, &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr,
+                addr, sizeof(addr));
+      if(!strncmp("0.", addr, 2)) {
+        continue;
+      }
+
+      preferred = !strncmp("wlan", ifa->ifa_name, 4)
+               || !strncmp("eth", ifa->ifa_name, 3);
+      if(!found || preferred) {
+        snprintf(ip, sizeof(ip), "%s", addr);
+        snprintf(ifname, sizeof(ifname), "%s", ifa->ifa_name);
+        found = 1;
+        if(preferred) {
+          break;
+        }
+      }
+    }
+    freeifaddrs(ifaddr);
+  }
+
+  snprintf(out, size, "%s:%d (%s)", ip, port, ifname);
+}
+
 int
 main(int argc, char **argv, char **envp) {
   notify_request_t req;
+  char where[64];
   uint16_t port = 2159;
   int notify_user = 1;
   pid_t pid;
@@ -137,7 +184,8 @@ main(int argc, char **argv, char **envp) {
 
   if(notify_user) {
     bzero(&req, sizeof req);
-    snprintf(req.message, sizeof req.message, "Serving GDB on port %d", port);
+    describe_address(port, where, sizeof where);
+    snprintf(req.message, sizeof req.message, "Serving GDB on %s", where);
     sceKernelSendNotificationRequest(0, &req, sizeof req, 0);
   }
 

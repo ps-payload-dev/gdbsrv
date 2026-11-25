@@ -3,16 +3,30 @@ OBJ_DIR := $(BUILD_DIR)/objects
 OBJECTS := $(addprefix $(OBJ_DIR)/,$(notdir $(SRCS:.c=.o)))
 VPATH := source/common:source/$(PLATFORM)
 
+PTRACE_REPO ?= https://github.com/ps-payload-dev/lib-ptrace.git
+PTRACE_DIR ?= deps/lib-ptrace
+PTRACE_CHECKOUT := $(PTRACE_DIR)/.git
+PTRACE := $(PTRACE_DIR)/build/$(PLATFORM)/libptrace.a
+
+CFLAGS += -I$(PTRACE_DIR)/headers
+
 .PHONY: all clean test format
 all: $(BIN)
 
-$(OBJ_DIR)/%.o: %.c
+$(PTRACE_CHECKOUT):
+	@mkdir -p $(dir $(PTRACE_DIR))
+	git clone --depth 1 $(PTRACE_REPO) $(PTRACE_DIR)
+
+$(PTRACE): $(PTRACE_CHECKOUT) $(wildcard $(PTRACE_DIR)/source/*)
+	$(MAKE) -C $(PTRACE_DIR) PLATFORM=$(PLATFORM) all
+
+$(OBJ_DIR)/%.o: %.c | $(PTRACE_CHECKOUT)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BIN): $(OBJECTS)
+$(BIN): $(OBJECTS) $(PTRACE)
 	@mkdir -p $(dir $@)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) $(PTRACE) $(LDLIBS)
 
 clean:
 	rm -rf $(BUILD_DIR)

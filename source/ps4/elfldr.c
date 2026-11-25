@@ -33,7 +33,7 @@ along with this program; see the file COPYING. If not, see
 #include <ps4/mdbg.h>
 
 #include "elfldr.h"
-#include "pt.h"
+#include <ptrace.h>
 #include "log.h"
 
 #define ROUND_PG(x) (((x) + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1))
@@ -441,7 +441,7 @@ elfldr_rfork_entry(void *progname) {
     return 0;
   }
 
-  if(ptrace(PT_TRACE_ME, 0, 0, 0)) {
+  if(pt_trace_me()) {
     LOG_PERROR("ptrace");
     return 0;
   }

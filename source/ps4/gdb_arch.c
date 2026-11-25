@@ -15,6 +15,7 @@ along with this program; see the file COPYING. If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include <sys/ptrace.h>
+#include <ptrace.h>
 #include <sys/wait.h>
 
 #include <ps4/mdbg.h>
@@ -24,7 +25,7 @@ along with this program; see the file COPYING. If not, see
 
 int
 gdb_traceme(void) {
-  return ptrace(PT_TRACE_ME, 0, 0, 0);
+  return pt_trace_me();
 }
 
 int

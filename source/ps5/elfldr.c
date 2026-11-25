@@ -37,7 +37,7 @@ along with this program; see the file COPYING. If not, see
 #include <ps5/klog.h>
 
 #include "elfldr.h"
-#include "pt.h"
+#include <ptrace.h>
 #include "log.h"
 
 #ifndef IPV6_2292PKTOPTIONS
@@ -607,7 +607,7 @@ elfldr_rfork_entry(void *progname) {
     return -1;
   }
 
-  if(ptrace(PT_TRACE_ME, 0, 0, 0)) {
+  if(pt_trace_me()) {
     LOG_PERROR("ptrace");
     return -1;
   }
@@ -675,7 +675,7 @@ elfldr_spawn(char *argv[], int stdio, intptr_t *baseaddr) {
   if(pt_syscall(pid, 599)) {
     pt_perror(pid, "sys_dynlib_process_needed_and_relocate");
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
 
@@ -684,39 +684,39 @@ elfldr_spawn(char *argv[], int stdio, intptr_t *baseaddr) {
   if(!(brkpoint = kernel_dynlib_entry_addr(pid, 0))) {
     puts("kernel_dynlib_entry_addr failed");
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
   brkpoint += 58;
   if(pt_copyout(pid, brkpoint, &orginstr, sizeof(orginstr))) {
     LOG_PERROR("pt_copyout");
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
   if(pt_copyin(pid, &int3instr, brkpoint, sizeof(int3instr))) {
     LOG_PERROR("pt_copyin");
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
 
   if(pt_continue(pid, SIGCONT)) {
     LOG_PERROR("pt_continue");
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
   if(waitpid(pid, 0, 0) == -1) {
     LOG_PERROR("waitpid");
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
   if(pt_copyin(pid, &orginstr, brkpoint, sizeof(orginstr))) {
     LOG_PERROR("pt_copyin");
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
 
@@ -730,13 +730,13 @@ elfldr_spawn(char *argv[], int stdio, intptr_t *baseaddr) {
 
   if(!(elf = elfldr_readfile(argv[0]))) {
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     return -1;
   }
 
   if(elfldr_exec(pid, stdio, elf, baseaddr)) {
     kill(pid, SIGKILL);
-    pt_detach(pid);
+    pt_detach(pid, 0);
     free(elf);
     return -1;
   }

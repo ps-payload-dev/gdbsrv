@@ -22,7 +22,7 @@ along with this program; see the file COPYING. If not, see
 
 #include "gdb_arch.h"
 #include "elfldr.h"
-#include "pt.h"
+#include <ptrace.h>
 
 static int
 sys_ptrace(int request, pid_t pid, caddr_t addr, int data) {
@@ -61,7 +61,7 @@ sys_ptrace(int request, pid_t pid, caddr_t addr, int data) {
 
 int
 gdb_traceme(void) {
-  return sys_ptrace(PT_TRACE_ME, 0, 0, 0);
+  return pt_trace_me();
 }
 
 int

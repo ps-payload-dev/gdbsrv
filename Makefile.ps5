@@ -9,7 +9,7 @@ include $(PS5_PAYLOAD_SDK)/toolchain/prospero.mk
 
 BIN := build/ps5/gdbsrv-ps5.elf
 SRCS := gdb_serve.c gdb_resp.c gdb_sig.c gdb_pkt.c
-SRCS += main.c gdb_arch.c pt.c elfldr.c
+SRCS += main.c gdb_arch.c elfldr.c
 VERSION_TAG := $(shell git describe --abbrev=6 --dirty --always --tags)
 CFLAGS := -Iheaders -Iheaders/ps5 -Wall -DVERSION_TAG=\"$(VERSION_TAG)\"
 
